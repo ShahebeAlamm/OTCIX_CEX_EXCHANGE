@@ -1,0 +1,459 @@
+<!-- 
+ <!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>OTCIX — Binance Real</title>
+  <style>
+    body{font-family:Arial;background:#f4f6f9;padding:20px}
+    .card{background:#fff;padding:12px;border-radius:8px;max-width:720px;margin:12px auto;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+    input,select,button{padding:8px;margin:6px;border-radius:6px;border:1px solid #ccc}
+    button{background:#2d89ef;color:#fff;border:none}
+    pre{background:#001e2e;color:#9fe;padding:8px;border-radius:6px;overflow:auto}
+  </style>
+</head>
+<body>
+  <h1 style="text-align:center">OTCIX — Binance Integration </h1>
+
+  <div class="card">
+    <h3>Signup</h3>
+    <input id="su_user" placeholder="username"/>
+    <input id="su_pass" placeholder="password" type="password"/>
+    <button onclick="signup()">Signup</button>
+    <div id="su_msg"></div>
+  </div>
+
+  <div class="card">
+    <h3>Login</h3>
+    <input id="li_user" placeholder="username"/>
+    <input id="li_pass" placeholder="password" type="password"/>
+    <button onclick="login()">Login</button>
+    <div id="li_msg"></div>
+  </div>
+
+  <div class="card">
+    <h3>Estimate</h3>
+    From: <input id="from" value="ETH"/> To: <input id="to" value="BTC"/> Amount: <input id="amount" value="0.01"/>
+    <button onclick="estimate()">Get Estimate</button>
+    <pre id="est_out"></pre>
+  </div>
+
+  <div class="card">
+    <h3>Place Order (JWT required)</h3>
+    Symbol: <input id="symbol" value="ETHBTC"/> Qty: <input id="qty" value="0.001"/> Side: <select id="side"><option>BUY</option><option>SELL</option></select>
+    Type: <select id="otype"><option>MARKET</option><option>LIMIT</option></select>
+    Price (for LIMIT): <input id="oprice"/>
+    <button onclick="placeOrder()">Place Order</button>
+    <pre id="order_out"></pre>
+    <h4>Check Order Status</h4>
+    OrderId: <input id="oid"/><button onclick="checkOrder()">Get Status</button>
+    <pre id="status_out"></pre>
+  </div>
+
+  <div class="card">
+    <h3>Account Balances (REAL only)</h3>
+    <button onclick="getAccount()">Get Account</button>
+    <pre id="acct_out"></pre>
+  </div>
+
+<script>
+let token = "";
+
+async function signup(){
+  const u=document.getElementById('su_user').value;
+  const p=document.getElementById('su_pass').value;
+  const r=await fetch('/api/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+  const j=await r.json();
+  document.getElementById('su_msg').innerText=JSON.stringify(j);
+}
+
+async function login(){
+  const u=document.getElementById('li_user').value;
+  const p=document.getElementById('li_pass').value;
+  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+  const j=await r.json();
+  if(j.token){ token=j.token; document.getElementById('li_msg').innerText='Logged in'; } else { document.getElementById('li_msg').innerText=JSON.stringify(j); }
+}
+
+async function estimate(){
+  const from=document.getElementById('from').value;
+  const to=document.getElementById('to').value;
+  const amount=document.getElementById('amount').value;
+  const r=await fetch('/api/estimate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from,to,amount})});
+  const j=await r.json();
+  document.getElementById('est_out').innerText=JSON.stringify(j,null,2);
+}
+
+async function placeOrder(){
+  if(!token) return alert('Login first');
+  const symbol=document.getElementById('symbol').value;
+  const qty=document.getElementById('qty').value;
+  const side=document.getElementById('side').value;
+  const type=document.getElementById('otype').value;
+  const price=document.getElementById('oprice').value || undefined;
+  const body={ symbol, side, type, quantity: qty };
+  if(type==='LIMIT') body.price = price;
+  const r=await fetch('/api/order', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token }, body:JSON.stringify(body) });
+  const j=await r.json();
+  document.getElementById('order_out').innerText=JSON.stringify(j,null,2);
+}
+
+async function checkOrder(){
+  if(!token) return alert('Login first');
+  const oid=document.getElementById('oid').value;
+  const symbol=document.getElementById('symbol').value;
+  const r=await fetch(`/api/order/status?symbol=${symbol}&orderId=${oid}`, { headers:{ 'Authorization':'Bearer '+token } });
+  const j=await r.json();
+  document.getElementById('status_out').innerText=JSON.stringify(j,null,2);
+}
+
+async function getAccount(){
+  if(!token) return alert('Login first');
+  const r=await fetch('/api/account', { headers:{ 'Authorization':'Bearer '+token } });
+  const j=await r.json();
+  document.getElementById('acct_out').innerText=JSON.stringify(j,null,2);
+}
+</script>
+</body>
+</html>  -->
+
+
+
+
+
+ 
+
+
+
+
+
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>OTCIX — Binance Swap</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#ffffff;--primary:#0066ff;--muted:#6b7280}
+    body{font-family:Inter,Segoe UI,Arial,sans-serif;margin:0;background:var(--bg);color:#111}
+    .wrap{max-width:980px;margin:28px auto;padding:18px}
+    .card{background:var(--card);border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(16,24,40,0.06);margin-bottom:14px}
+    h1{margin:4px 0 12px;font-size:20px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    input,select,button{padding:10px;border-radius:8px;border:1px solid #e6eef8;font-size:14px}
+    input[type=number]{-moz-appearance:textfield}
+    button.primary{background:var(--primary);color:#fff;border:none;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid #e6eef8;color:#111}
+    .half{flex:1;min-width:160px}
+    .small{font-size:13px;color:var(--muted)}
+    .note{font-size:13px;color:var(--muted);margin-top:8px}
+    .dropdown{position:absolute;background:#fff;border:1px solid #e6eef8;border-radius:6px;max-height:220px;overflow:auto;width:100%;z-index:50}
+    .dd-item{padding:8px;cursor:pointer}
+    .dd-item:hover{background:#f0f6ff}
+    pre{background:#051427;color:#9fe;padding:10px;border-radius:8px;overflow:auto}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    .flex-between{display:flex;justify-content:space-between;align-items:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>OTCIX — Binance Swap</h1>
+      <div class="row" style="align-items:flex-start">
+        <div style="flex:1;min-width:260px">
+          <label>Username</label>
+          <input id="ui_user" placeholder="username">
+        </div>
+        <div style="width:220px">
+          <label>Password</label>
+          <input id="ui_pass" type="password" placeholder="password">
+        </div>
+        <div style="width:220px" class="row">
+          <button class="primary" onclick="signup()">Signup</button>
+          <button class="ghost" onclick="login()">Login</button>
+        </div>
+      </div>
+      <div class="note" id="auth_msg">Not logged in</div>
+    </div>
+
+    <div class="card">
+      <div class="flex-between">
+        <h2 style="margin:0">Swap</h2>
+        <div class="small">Mode: <span id="modeFlag">Checking...</span></div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div class="half" style="position:relative">
+          <label>From (token you have)</label>
+          <input id="fromInput" placeholder="e.g. USDT" autocomplete="off" oninput="onSuggest(this,'from')">
+          <div id="fromDD" class="dropdown" style="display:none"></div>
+        </div>
+
+        <div class="half" style="position:relative">
+          <label>To (token you want)</label>
+          <input id="toInput" placeholder="e.g. TRY" autocomplete="off" oninput="onSuggest(this,'to')">
+          <div id="toDD" class="dropdown" style="display:none"></div>
+        </div>
+
+        <div style="width:160px">
+          <label>Amount (you want to spend)</label>
+          <input id="amtInput" type="number" step="any" value="1">
+        </div>
+
+        <div style="width:160px">
+          <label>Type</label>
+          <select id="otype"><option>MARKET</option><option>LIMIT</option></select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div style="flex:1">
+          <div class="small">Pair info (live from Binance):</div>
+          <div id="pairInfo" class="small">—</div>
+        </div>
+        <div style="width:220px" class="row">
+          <button class="primary" onclick="getEstimate()">Get Estimate</button>
+          <button class="ghost" onclick="doSwap()">Swap</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="small">Estimated / result:</div>
+        <div id="estimateOut" class="small">—</div>
+        <pre id="swapOut"></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Account Balances (Spot)</h3>
+      <div class="row">
+        <button onclick="getAccount()">Refresh Balances</button>
+        <div class="small" id="acctStatus"></div>
+      </div>
+      <pre id="acctOut"></pre>
+    </div>
+  </div>
+
+<script>
+const BASE = window.location.origin;
+let TOKEN = "";
+let suggestionsCache = {};
+let pairInfoCache = {};
+let modeReal = false;
+
+async function checkMode(){
+  // show whether BINANCE_REAL true (reads from server via /api/price as quick probe)
+  try {
+    // probe a common symbol (BTCUSDT) price endpoint — if 200 then server up
+    const r = await fetch(BASE + '/api/price/BTCUSDT');
+    modeReal = (new URLSearchParams('') , r.ok && r.headers.get('content-type')?.includes('application/json'));
+  } catch(e){
+    modeReal = false;
+  }
+  document.getElementById('modeFlag').innerText = modeReal ? 'Real (backend)' : 'Simulated';
+}
+checkMode();
+
+// ----------------- Signup / Login -----------------
+async function signup(){
+  const u = document.getElementById('ui_user').value.trim();
+  const p = document.getElementById('ui_pass').value;
+  if(!u || !p) return alert('enter username & password');
+  const res = await fetch(BASE + '/api/signup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username:u, password:p })});
+  const j = await res.json();
+  document.getElementById('auth_msg').innerText = j.ok ? 'Signup ok — please login' : (j.error || JSON.stringify(j));
+}
+async function login(){
+  const u = document.getElementById('ui_user').value.trim();
+  const p = document.getElementById('ui_pass').value;
+  if(!u || !p) return alert('enter username & password');
+  const res = await fetch(BASE + '/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username:u, password:p })});
+  const j = await res.json();
+  if(j.token){ TOKEN = j.token; document.getElementById('auth_msg').innerText = 'Logged in'; } else { document.getElementById('auth_msg').innerText = j.error || JSON.stringify(j); }
+}
+
+// ----------------- Suggestions (calls backend /api/suggestions) -----------------
+let suggestTimer = null;
+function onSuggest(input, which){
+  const q = input.value.trim();
+  const dd = document.getElementById(which + 'DD');
+  if(!q){ dd.style.display='none'; return; }
+  clearTimeout(suggestTimer);
+  suggestTimer = setTimeout(async ()=>{
+    const cached = suggestionsCache[q];
+    let list;
+    if(cached) list = cached;
+    else {
+      try {
+        const r = await fetch(BASE + '/api/suggestions?q=' + encodeURIComponent(q));
+        list = await r.json();
+        suggestionsCache[q] = list;
+      } catch(e){ list = []; }
+    }
+    if(!list || list.length===0){ dd.style.display='none'; return; }
+    dd.innerHTML = list.slice(0,30).map(s => `<div class="dd-item" data-val="${s}">${s}</div>`).join('');
+    dd.style.display='block';
+    dd.querySelectorAll('.dd-item').forEach(el=>{
+      el.onclick = ()=>{
+        document.getElementById(which + 'Input').value = el.dataset.val;
+        dd.style.display='none';
+        loadPairInfoIfReady();
+      };
+    });
+  }, 180);
+}
+document.addEventListener('click', (e)=> {
+  if(!e.target.closest('.dropdown')){ document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none'); }
+});
+
+// ----------------- Pair info -----------------
+async function fetchPairInfo(symbol){
+  symbol = symbol.toUpperCase();
+  if(pairInfoCache[symbol]) return pairInfoCache[symbol];
+  try {
+    const r = await fetch(BASE + '/api/pair-info/' + encodeURIComponent(symbol));
+    if(!r.ok) throw new Error('not found');
+    const j = await r.json();
+    pairInfoCache[symbol] = j;
+    return j;
+  } catch(e){
+    return null;
+  }
+}
+
+async function loadPairInfoIfReady(){
+  const from = document.getElementById('fromInput').value.trim().toUpperCase();
+  const to = document.getElementById('toInput').value.trim().toUpperCase();
+  if(!from || !to) return;
+  // try from+to first
+  const sym = (from + to).toUpperCase();
+  let info = await fetchPairInfo(sym);
+  let used = sym;
+  let reversed = false;
+  if(!info){
+    // try reverse
+    const rev = (to + from).toUpperCase();
+    info = await fetchPairInfo(rev);
+    if(info){
+      used = rev;
+      reversed = true;
+    }
+  }
+  if(!info){
+    document.getElementById('pairInfo').innerText = 'Pair not found on Binance';
+    return;
+  }
+  const text = `Symbol: ${used} ${reversed ? '(reversed)' : ''} — base: ${info.baseAsset} quote: ${info.quoteAsset} | minQty: ${info.minQty || '-'} | minNotional: ${info.minNotional || '-'} | minPrice: ${info.minPrice || '-'}`;
+  document.getElementById('pairInfo').innerText = text;
+  return { info, used, reversed };
+}
+
+// ----------------- Estimate -----------------
+async function getEstimate(){
+  const from = document.getElementById('fromInput').value.trim().toUpperCase();
+  const to = document.getElementById('toInput').value.trim().toUpperCase();
+  const amount = parseFloat(document.getElementById('amtInput').value);
+  if(!from || !to || !amount) return alert('enter from, to and amount');
+  // call backend estimate
+  try {
+    const r = await fetch(BASE + '/api/estimate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ from, to, amount })});
+    const j = await r.json();
+    if(j.error) { document.getElementById('estimateOut').innerText = 'Error: ' + j.error; return; }
+    if(j.reversed){
+      document.getElementById('estimateOut').innerText = `Reversed pair ${j.pair}. Rate: ${j.rate} — You get ≈ ${j.estimated} ${j.from}`;
+    } else {
+      document.getElementById('estimateOut').innerText = `Pair ${j.pair}. Rate: ${j.rate} — You get ≈ ${j.estimated} ${to}`;
+    }
+  } catch(e){
+    document.getElementById('estimateOut').innerText = 'Estimate failed';
+  }
+  // also show pair info
+  loadPairInfoIfReady();
+}
+
+// ----------------- Swap (real/simulated) -----------------
+async function doSwap(){
+  if(!TOKEN) return alert('Login first');
+  const from = document.getElementById('fromInput').value.trim().toUpperCase();
+  const to = document.getElementById('toInput').value.trim().toUpperCase();
+  let amount = parseFloat(document.getElementById('amtInput').value);
+  const type = document.getElementById('otype').value;
+  if(!from||!to||!amount) return alert('Fill fields');
+
+  // Determine pair and whether reversed
+  const pairCheck = await loadPairInfoIfReady();
+  if(!pairCheck) return alert('Pair not valid on Binance');
+  let symbol = pairCheck.used;
+  // We interpret user's amount as "amount of FROM token they want to spend".
+  // If FROM == baseAsset -> SELL base (quantity is base amount)
+  // If FROM == quoteAsset -> BUY base (we will send quoteOrderQty)
+  const { info } = pairCheck;
+  const base = info.baseAsset;
+  const quote = info.quoteAsset;
+
+  let payload = { symbol, side: '', type: type };
+  // If user is spending the base token -> SELL base
+  if(from === base){
+    payload.side = 'SELL';
+    // quantity in base units (adjust by step)
+    payload.quantity = String(amount);
+  } else if(from === quote){
+    // user spends quote to buy base -> use quoteOrderQty (spend quote)
+    payload.side = 'BUY';
+    payload.quoteOrderQty = String(amount);
+  } else {
+    return alert('From token does not match pair assets');
+  }
+
+  // set LIMIT fields if chosen
+  if(type === 'LIMIT'){
+    // fetch price to compute a default price
+    try {
+      const p = await fetch(BASE + '/api/price/' + symbol);
+      const pj = await p.json();
+      if(pj.price) payload.price = String(pj.price);
+      payload.timeInForce = 'GTC';
+    } catch(e){}
+  }
+
+  // call server
+  document.getElementById('swapOut').innerText = 'Placing order...';
+  try {
+    const r = await fetch(BASE + '/api/order', {
+      method:'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + TOKEN },
+      body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    document.getElementById('swapOut').innerText = JSON.stringify(j, null, 2);
+    // refresh balances/estimate
+    setTimeout(() => { getAccount(); getEstimate(); }, 1200);
+  } catch(e){
+    document.getElementById('swapOut').innerText = 'Swap failed: ' + e.message;
+  }
+}
+
+// ----------------- Account -----------------
+async function getAccount(){
+  if(!TOKEN) { document.getElementById('acctOut').innerText = 'Login to view balances'; return; }
+  document.getElementById('acctStatus').innerText = 'Fetching...';
+  try {
+    const r = await fetch(BASE + '/api/account', { headers: { 'Authorization':'Bearer ' + TOKEN }});
+    const j = await r.json();
+    document.getElementById('acctOut').innerText = JSON.stringify(j, null, 2);
+    document.getElementById('acctStatus').innerText = 'Done';
+  } catch(e){
+    document.getElementById('acctOut').innerText = 'Error: ' + (e.message || e);
+    document.getElementById('acctStatus').innerText = '';
+  }
+}
+
+// ----------------- init small helpers -----------------
+window.addEventListener('load', () => {
+  // prefetch a few suggestions to warm cache (optional)
+  fetch(BASE + '/api/suggestions?q=US').then(()=>{}).catch(()=>{});
+});
+</script>
+</body>
+</html>
