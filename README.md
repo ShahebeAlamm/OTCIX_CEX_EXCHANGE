@@ -1,6 +1,6 @@
 # OTCIX Exchange Backend
 
-A Node.js and Express based crypto swap backend using the ChangeNOW API.
+A Node.js and Express based crypto swap backend using the binance API.
 Users can fetch coins, get live estimates, create swap transactions, and track their status from a single backend.
 
 Project Overview
